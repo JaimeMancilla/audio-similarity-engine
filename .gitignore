@@ -1,0 +1,21 @@
+# Audio descargado y features derivadas — no van al repo
+data/raw/*.mp3
+data/raw/*.wav
+data/raw/metadata.json
+data/features/*.csv
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Credenciales / config local
+.env
+
+# OS
+.DS_Store
+
+# Figuras generadas
+outputs/*.png
+outputs/*.log
