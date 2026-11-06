@@ -70,6 +70,17 @@ Scripts en `src/`, en orden de ejecución:
    `n_neighbors` ∈ {5,10,15}, en 2-d y 10-d. UMAP usa `metric="cosine"` en la
    entrada y euclidiana en el embebido (el origen de UMAP no significa nada).
    Figura en `outputs/pca_vs_umap.png`.
+7. **`cluster.py`** — KMeans (barrido de k por silhouette) y HDBSCAN sobre
+   PCA(10) **L2-normalizado** (euclidiana sobre vectores de norma 1 ≡ coseno,
+   así el clustering usa la misma noción de similitud que el recomendador).
+   Evalúa contra género con ARI + tabla de contingencia. Figura en
+   `outputs/clusters.png` (grafica k=2, no el "mejor" k).
+
+Tests en `tests/` (pytest, 26 tests, ~5 s): señales sintéticas para
+`extract_features` (seno 440 Hz vs ruido blanco), CSV temporal para
+`similarity`, datos con respuesta conocida para pureza/η²/KMeans,
+`resolve_client_id` con `ROOT_DIR` apuntando a tmp (nunca lee el `.env` real).
+`pytest` desde la raíz; CI en `.github/workflows/tests.yml` (Ubuntu, 3.13).
 
 Catálogo de prueba: **shoegaze + jazz**, elegidos por ser polos casi opuestos.
 Sanity check que ya pasa: las dos versiones de *Nargo - Dreamwave Reverie*
@@ -123,6 +134,12 @@ trustworthiness (0.956 vs 0.923) pero no en pureza → el cuello de botella son
 las features, no la reducción. Se queda PCA(10) en el recomendador. Revisitar
 UMAP con catálogo más grande.
 
+**Clustering (2026-11-06):** sin estructura. Silhouette máx 0.179 (k=8, borde
+del rango → artefacto), < 0.25 en todo k. KMeans k=2 corta sobre PC1
+(η²=0.57) con ARI −0.02 vs género: el primer corte natural es "timbre estático
+vs cambiante", no shoegaze vs jazz. HDBSCAN: 2 clusters + 3 ruido, ARI +0.02.
+Clusters chicos sí agrupan mismo artista/sesión (Nargo ×2, Contini ×2, Waxdoll ×2).
+
 Sigue vigente: el tempo de `librosa.beat.beat_track()` es poco confiable en
 jazz con swing o ritmo libre — limitación conocida de MIR, no bug.
 
@@ -133,12 +150,11 @@ jazz con swing o ritmo libre — limitación conocida de MIR, no bug.
 - [x] Diagnóstico de PCA: loadings, η²/d por componente, pureza top-k,
       scatter coloreado por género (`src/diagnose_pca.py`, 2026-11-02).
 - [ ] Agregación de features a nivel álbum.
-- [ ] Clustering no supervisado (KMeans / HDBSCAN) para ver si emergen
-      agrupaciones sin usar género como etiqueta.
+- [x] Clustering KMeans/HDBSCAN (`src/cluster.py`, 2026-11-06).
 - [x] Comparar PCA vs UMAP (`src/compare_reduction.py`, 2026-11-06).
 - [ ] Anomaly detection: tracks atípicos dentro de su propio género
       declarado.
-- [ ] Tests — el proyecto todavía no tiene ninguno.
+- [x] Tests pytest + CI GitHub Actions (2026-11-06).
 - [x] Publicación MVP (2026-11-06): scripts (no notebooks), sin packaging,
       licencia MIT, figuras del README copiadas a `docs/img/` (porque
       `outputs/*.png` está en `.gitignore` — si se regeneran, copiarlas).

@@ -29,6 +29,7 @@ Jamendo API ──► mp3 ──► 44 features por track ──► StandardScal
 | `src/visualize_track.py` | Muestra qué miden las features: forma de onda, espectrograma Mel y MFCCs de dos tracks lado a lado. |
 | `src/diagnose_pca.py` | Diagnostica el espacio PCA: loadings, qué componentes separan géneros (η², d de Cohen) y pureza de vecinos contra el azar. |
 | `src/compare_reduction.py` | Compara PCA contra UMAP por pureza de vecinos y trustworthiness, con varias semillas. |
+| `src/cluster.py` | Clustering no supervisado (KMeans y HDBSCAN) en el mismo espacio que el recomendador, evaluado contra el género con ARI. |
 
 ## Resultados
 
@@ -89,6 +90,35 @@ Lecturas:
   revisarlo con un catálogo más grande, donde la estructura no lineal tiene más
   chances de aparecer.
 
+### 4. Clustering: no hay grupos naturales, y el primer corte no es el género
+
+| Método | Clusters | Silhouette | ARI vs género |
+|---|---|---|---|
+| KMeans k=2 | 2 | 0.165 | −0.02 |
+| KMeans k=8 (mejor silhouette) | 8 | 0.179 | +0.09 |
+| HDBSCAN (min_cluster_size=3) | 2 + 3 ruido | — | +0.02 |
+
+*Silhouette:* qué tan cerca está cada track de su cluster frente al cluster
+vecino (−1 a 1; menos de 0.25 se considera "sin estructura sustancial").
+*ARI:* acuerdo entre clusters y géneros corregido por azar (0 = azar, 1 = perfecto).
+
+![Silhouette por k, KMeans k=2 y HDBSCAN sobre PC1×PC2](docs/img/clusters.png)
+
+Lecturas:
+
+- **No hay estructura de clusters.** Ningún k supera un silhouette de 0.18. El
+  "mejor" k=8 cae en el borde del rango probado: con 30 tracks, el silhouette
+  sube al armar grupos de 3 o 4 tracks casi idénticos. No es un óptimo real.
+- **Cuando se lo obliga a cortar en dos, el corte cae sobre PC1, no sobre el
+  género** (η² = 0.57 con PC1, ARI ≈ 0 con el género). Lo separa la
+  variabilidad del timbre en el tiempo (desvío de los MFCCs): tracks estáticos
+  contra tracks cambiantes. Hay shoegaze y jazz de los dos lados.
+- **Los clusters chicos sí tienen sentido** a nivel de artista o sesión: las
+  dos versiones de *Dreamwave Reverie* caen juntas, igual que *Dewey Square* y
+  *Sandu*, y que los dos temas de Waxdoll.
+- Todo esto es consistente con el resultado 3: el espacio tiene vecindarios
+  locales útiles para recomendar, pero no una partición global en géneros.
+
 ## Uso
 
 Requiere Python 3.13. Con 3.14, numba (dependencia de librosa y umap) todavía
@@ -115,7 +145,22 @@ python src/similarity.py --query "nombre del track o artista" --top 5
 python src/visualize_track.py --tracks "In Motion" "Dewey Square"
 python src/diagnose_pca.py
 python src/compare_reduction.py
+python src/cluster.py
 ```
+
+### Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+Los tests no necesitan audio descargado. Usan señales sintéticas con
+propiedades conocidas: un La de 440 Hz tiene que dar el bin de chroma del La,
+el ruido blanco tiene que tener un centroide espectral mucho más alto que un
+tono puro, etc. También hay datos armados con la respuesta conocida (grupos
+perfectamente separados tienen que dar pureza 1 y ARI 1). Corren en GitHub
+Actions en cada push.
 
 El audio descargado y las features no se versionan (ver `.gitignore`). Cada
 quien arma su catálogo con su propio `client_id`.
@@ -148,8 +193,8 @@ quien arma su catálogo con su propio `client_id`.
 - [x] Visualización pedagógica de forma de onda / espectrograma / MFCCs
 - [x] Diagnóstico de PCA (loadings, separación por género, pureza de vecinos)
 - [x] Comparación PCA vs UMAP
-- [ ] Tests
-- [ ] Clustering (KMeans / HDBSCAN) para explorar agrupaciones naturales
+- [x] Tests (pytest + GitHub Actions)
+- [x] Clustering (KMeans / HDBSCAN) para explorar agrupaciones naturales
 - [ ] Agregación de features a nivel álbum
 - [ ] Anomaly detection: tracks "raros" dentro de su propio género declarado
 - [ ] Ampliar el catálogo (más géneros, más tracks)
