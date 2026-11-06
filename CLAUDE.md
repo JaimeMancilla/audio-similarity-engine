@@ -157,7 +157,9 @@ jazz con swing o ritmo libre — limitación conocida de MIR, no bug.
   ni credenciales en el historial de git — el audio de Jamendo tiene licencia
   CC pero probablemente no corresponda redistribuirlo dentro del repo; usar
   `.gitignore` para `data/raw/` y `data/features/`. Repo git inicializado
-  el 2026-11-06 y publicado en GitHub (público).
+  el 2026-11-06 y publicado (público) en
+  https://github.com/JaimeMancilla/audio-similarity-engine (cuenta
+  `JaimeMancilla`, sin V: es la que tiene las credenciales de git).
 - Consola de Windows es cp1252: los scripts hacen
   `sys.stdout.reconfigure(encoding="utf-8")` porque hay títulos en cirílico.
   Para scripts ad-hoc, `PYTHONIOENCODING=utf-8`.
